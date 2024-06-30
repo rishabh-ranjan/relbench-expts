@@ -183,7 +183,7 @@ def train() -> float:
         if steps > args.max_steps_per_epoch:
             break
 
-    return loss_accum / (count_accum + 1e-10)  # sometimes count_accum is 0
+    return loss_accum / count_accum
 
 
 @torch.no_grad()

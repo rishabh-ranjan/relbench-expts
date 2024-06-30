@@ -466,9 +466,7 @@ test_metrics = evaluate(
 )
 print(f"Test: {test_metrics}")
 
-# <<<
 if args.roach_project:
     roach.store["val"] = val_metrics
     roach.store["test"] = test_metrics
     roach.finish()
-# >>>
