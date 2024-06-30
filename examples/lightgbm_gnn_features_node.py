@@ -2,7 +2,7 @@ import argparse
 import copy
 import math
 import os
-from typing import Dict, List
+from typing import Dict
 
 import numpy as np
 import torch
@@ -13,7 +13,6 @@ from text_embedder import GloveTextEmbedding
 from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.gbdt import LightGBM
-from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
@@ -45,9 +44,13 @@ parser.add_argument(
     default=50_000,
     help="Subsample the specified number of training data to train lightgbm model.",
 )
-# <<<
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--cache_dir",
+    type=str,
+    default=os.path.expanduser("~/.cache/relbench/materialized"),
+)
 parser.add_argument(
     "--roach_project",
     type=str,
@@ -67,10 +70,7 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-root_dir = "./data"
-
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-# >>>
 task: NodeTask = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
@@ -81,7 +81,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
+    cache_dir=os.path.join(args.cache_dir, args.dataset),
 )
 
 clamp_min, clamp_max = None, None
@@ -353,9 +353,7 @@ print(f"Val: {val_metrics}")
 pred = model.predict(tf_test).numpy()
 print(f"Test: {test_metrics}")
 
-# <<<
 if args.roach_project:
     roach.store["val"] = val_metrics
     roach.store["test"] = test_metrics
     roach.finish()
-# >>>

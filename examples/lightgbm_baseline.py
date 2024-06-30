@@ -1,9 +1,5 @@
 import argparse
-
-# <<<
 import os
-
-# >>>
 from typing import Dict
 
 import numpy as np
@@ -16,8 +12,6 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_frame.data import Dataset
 from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
-
-# <<<
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
@@ -25,9 +19,6 @@ from relbench.data import RelBenchDataset, RelBenchNodeTask
 from relbench.data.task_base import TaskType
 from relbench.datasets import get_dataset
 from relbench.external.utils import remove_pkey_fkey
-
-# >>>
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
@@ -40,8 +31,12 @@ parser.add_argument(
     default=50_000,
     help="Subsample the specified number of training data to train lightgbm model.",
 )
-# <<<
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--cache_dir",
+    type=str,
+    default=os.path.expanduser("~/.cache/relbench/materialized"),
+)
 parser.add_argument(
     "--roach_project",
     type=str,
@@ -56,15 +51,12 @@ if args.roach_project:
     roach.init(args.roach_project)
     roach.store["args"] = args.__dict__
 
-root_dir = "./data"
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-# >>>
 task: RelBenchNodeTask = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
@@ -162,13 +154,9 @@ train_dataset = Dataset(
         batch_size=256,
     ),
 )
-# <<<
 train_dataset = train_dataset.materialize(
-    path=os.path.join(
-        root_dir, f"{args.dataset}_{args.task}_materialized_cache_lightgbm.pt"
-    )
+    path=os.path.join(args.cache_dir, f"{args.dataset}_{args.task}.pt")
 )
-# >>>
 
 tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
@@ -228,9 +216,7 @@ print(f"Train: {train_metrics}")
 print(f"Val: {val_metrics}")
 print(f"Test: {test_metrics}")
 
-# <<<
 if args.roach_project:
     roach.store["val"] = val_metrics
     roach.store["test"] = test_metrics
     roach.finish()
-# >>>

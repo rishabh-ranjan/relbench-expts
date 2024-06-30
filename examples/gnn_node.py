@@ -32,9 +32,13 @@ parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
-# <<<
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument(
+    "--cache_dir",
+    type=str,
+    default=os.path.expanduser("~/.cache/relbench/materialized"),
+)
 parser.add_argument(
     "--roach_project",
     type=str,
@@ -48,16 +52,14 @@ if args.roach_project:
 
     roach.init(args.roach_project)
     roach.store["args"] = args.__dict__
+args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-root_dir = "./data"
-
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-# >>>
 task: NodeTask = dataset.get_task(args.task, process=True)
 
 col_to_stype_dict = dataset2inferred_stypes[args.dataset]
@@ -68,7 +70,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device=device), batch_size=256
     ),
-    cache_dir=os.path.join(root_dir, f"{args.dataset}_materialized_cache"),
+    cache_dir=os.path.join(args.cache_dir, args.dataset),
 )
 
 clamp_min, clamp_max = None, None
@@ -213,9 +215,7 @@ test_pred = test(loader_dict["test"])
 test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")
 
-# <<<
 if args.roach_project:
     roach.store["val"] = val_metrics
     roach.store["test"] = test_metrics
     roach.finish()
-# >>>

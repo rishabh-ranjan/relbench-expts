@@ -14,7 +14,6 @@ from relbench.datasets import get_dataset
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-engagement")
-# <<<
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--roach_project",
@@ -34,7 +33,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
 dataset: RelBenchDataset = get_dataset(name=args.dataset, process=False)
-# >>>
 task = dataset.get_task(args.task, process=True)
 
 train_table = task.train_table
