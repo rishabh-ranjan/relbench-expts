@@ -1,3 +1,5 @@
+import json
+import pkgutil
 from collections import defaultdict
 from functools import lru_cache
 
@@ -9,10 +11,13 @@ from . import amazon, avito, event, f1, hm, stack, trial
 
 task_registry = defaultdict(dict)
 
+hashes_str = pkgutil.get_data(__name__, "hashes.json")
+hashes = json.loads(hashes_str)
+
 DOWNLOAD_REGISTRY = pooch.create(
     path=pooch.os_cache("relbench"),
-    base_url="https://relbench.stanford.edu/staging_data/",  # TODO: change
-    registry={},
+    base_url="https://relbench.stanford.edu/download/",
+    registry=hashes,
 )
 
 
@@ -70,7 +75,6 @@ register_task("rel-event", "user-ignore", event.UserIgnoreTask)
 register_task("rel-f1", "driver-position", f1.DriverPositionTask)
 register_task("rel-f1", "driver-dnf", f1.DriverDNFTask)
 register_task("rel-f1", "driver-top3", f1.DriverTop3Task)
-register_task("rel-f1", "driver-constructor-result", f1.DriverConstructorResultTask)
 
 register_task("rel-hm", "user-item-purchase", hm.UserItemPurchaseTask)
 register_task("rel-hm", "user-churn", hm.UserChurnTask)

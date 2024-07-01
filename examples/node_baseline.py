@@ -32,8 +32,8 @@ if args.roach_project:
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset)
-task: NodeTask = get_task(args.dataset, args.task)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+task: NodeTask = get_task(args.dataset, args.task, download=True)
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")

@@ -38,7 +38,7 @@ parser.add_argument(
 parser.add_argument(
     "--cache_dir",
     type=str,
-    default=os.path.expanduser("~/.cache/relbench"),
+    default=os.path.expanduser("~/.cache/relbench_examples"),
 )
 parser.add_argument(
     "--roach_project",
@@ -59,8 +59,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset)
-task: LinkTask = get_task(args.dataset, args.task)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+task: LinkTask = get_task(args.dataset, args.task, download=True)
 target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
 
 train_table = task.get_table("train")

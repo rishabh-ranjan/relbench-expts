@@ -51,7 +51,7 @@ parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--cache_dir",
     type=str,
-    default=os.path.expanduser("~/.cache/relbench/materialized"),
+    default=os.path.expanduser("~/.cache/relbench_examples/materialized"),
 )
 parser.add_argument(
     "--roach_project",
@@ -72,8 +72,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset)
-task: NodeTask = get_task(args.dataset, args.task)
+dataset: Dataset = get_dataset(args.dataset, download=True)
+task: NodeTask = get_task(args.dataset, args.task, download=True)
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
