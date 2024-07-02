@@ -381,7 +381,7 @@ def evaluate(
     eval_k: int,
     pred_score: float,
     train_table: Table,
-    task: RelBenchLinkTask,
+    task: LinkTask,
 ) -> Dict[str, float]:
     """Given the input dataframe used for lightGBM binary link classification
     and its output prediction scores and true labels, generate link prediction
@@ -397,7 +397,7 @@ def evaluate(
             evaluation.
         pred_score (float): The binary classification prediction scores.
         train_table (Table): The train table.
-        task (RelBenchLinkTask): The task.
+        task (LinkTask): The task.
 
     Returns:
         Dict[str, float]: The link pred metrics
