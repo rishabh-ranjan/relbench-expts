@@ -37,9 +37,11 @@ parser.add_argument("--num_layers", type=int, default=2)
 parser.add_argument("--num_neighbors", type=int, default=128)
 parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
+# If true, try to load pretrained state dict
+parser.add_argument("--attempt_load_state_dict", action="store_true", default=False)
 parser.add_argument(
-    "--attempt_load_state_dict", action="store_true"
-)  # If true, try to load pretrained state dict
+    "--no_attempt_load_state_dict", dest="attempt_load_state_dict", action="store_false"
+)
 parser.add_argument(
     "--sample_size",
     type=int,
@@ -52,12 +54,6 @@ parser.add_argument(
     "--cache_dir",
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
-)
-parser.add_argument(
-    "--roach_project",
-    type=str,
-    default=None,
-    help="This is for internal use only.",
 )
 args = parser.parse_args()
 

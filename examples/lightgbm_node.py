@@ -26,7 +26,8 @@ parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-engage")
 parser.add_argument("--num_trials", type=int, default=10)
 # Use auto-regressive label as hand-crafted feature as input to LightGBM
-parser.add_argument("--use_ar_label", action="store_true")
+parser.add_argument("--use_ar_label", action="store_true", default=False)
+parser.add_argument("--no-use_ar_label", dest="use_ar_label", action="store_false")
 parser.add_argument(
     "--sample_size",
     type=int,
@@ -38,12 +39,6 @@ parser.add_argument(
     "--cache_dir",
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
-)
-parser.add_argument(
-    "--roach_project",
-    type=str,
-    default=None,
-    help="This is for internal use only.",
 )
 args = parser.parse_args()
 

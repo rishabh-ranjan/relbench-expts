@@ -2,6 +2,7 @@ import argparse
 import copy
 import json
 import os
+import warnings
 from pathlib import Path
 from typing import Dict, Tuple
 import warnings
@@ -19,7 +20,7 @@ from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
 from relbench.base import Dataset, LinkTask, TaskType
-from relbench.basesets import get_dataset
+from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import LinkNeighborLoader
 from relbench.modeling.utils import get_stype_proposal
@@ -40,9 +41,13 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 # Use the same seed time across the mini-batch and share the negatives
 # TODO: fix, currently this cannot be made false
 parser.add_argument("--share_same_time", action="store_true", default=True)
+parser.add_argument(
+    "--no-share_same_time", dest="share_same_time", action="store_false"
+)
 # Whether to use shallow embedding on dst nodes or not.
 # TODO: fix, currently this cannot be made false
 parser.add_argument("--use_shallow", action="store_true", default=True)
+parser.add_argument("--no-use_shallow", dest="use_shallow", action="store_false")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
@@ -50,12 +55,6 @@ parser.add_argument(
     "--cache_dir",
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
-)
-parser.add_argument(
-    "--roach_project",
-    type=str,
-    default=None,
-    help="This is for internal use only.",
 )
 args = parser.parse_args()
 
@@ -118,7 +117,8 @@ train_loader = LinkNeighborLoader(
 
 eval_loaders_dict: Dict[str, Tuple[NeighborLoader, NeighborLoader]] = {}
 for split in ["val", "test"]:
-    seed_time = task.val_seed_time if split == "val" else task.test_seed_time
+    timestamp = dataset.val_timestamp if split == "val" else dataset.test_timestamp
+    seed_time = int(timestamp.timestamp())
     target_table = task.get_table(split)
     src_node_indices = torch.from_numpy(target_table.df[task.src_entity_col].values)
     src_loader = NeighborLoader(

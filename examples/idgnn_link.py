@@ -2,6 +2,7 @@ import argparse
 import copy
 import json
 import os
+import warnings
 from pathlib import Path
 from typing import Dict, Tuple
 import warnings
@@ -43,12 +44,6 @@ parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--cache_dir", type=str, default=os.path.expanduser("~/.cache/relbench_examples")
-)
-parser.add_argument(
-    "--roach_project",
-    type=str,
-    default=None,
-    help="This is for internal use only.",
 )
 args = parser.parse_args()
 

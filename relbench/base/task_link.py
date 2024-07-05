@@ -1,27 +1,19 @@
 from __future__ import annotations
 
-from typing import (
-    Callable,
-    Dict,
-    List,
-    Optional,
-)
+from typing import Callable, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+from .dataset import Dataset
 from .table import Table
 from .task_base import BaseTask, TaskType
-
-# TODO: remove!
-from ..modeling.utils import to_unix_time
 
 
 class LinkTask(BaseTask):
     r"""A link prediction task on a dataset."""
 
-    name: str
     src_entity_col: str
     src_entity_table: str
     dst_entity_col: str
@@ -31,6 +23,18 @@ class LinkTask(BaseTask):
     task_type: TaskType
     timedelta: pd.Timedelta
     metrics: List[Callable[[NDArray, NDArray], float]]
+    num_eval_timestamps: int = 1
+
+    def __init__(
+        self,
+        dataset: Dataset,
+        cache_dir: Optional[str] = None,
+    ):
+        if self.num_eval_timestamps != 1:
+            raise NotImplementedError(
+                "LinkTask currently only supports num_eval_timestamps=1."
+            )
+        super().__init__(dataset, cache_dir)
 
     def filter_dangling_entities(self, table: Table) -> Table:
         # filter dangling destination entities from a list
@@ -92,15 +96,7 @@ class LinkTask(BaseTask):
     def num_dst_nodes(self) -> int:
         return len(self.dataset.get_db().table_dict[self.dst_entity_table])
 
-    @property
-    def val_seed_time(self) -> int:
-        return to_unix_time(pd.Series([self.dataset.val_timestamp]))[0]
-
-    @property
-    def test_seed_time(self) -> int:
-        return to_unix_time(pd.Series([self.dataset.test_timestamp]))[0]
-
-    def stats(self) -> dict[str, dict[str, int]]:
+    def stats(self) -> Dict[str, Dict[str, int]]:
         r"""Get train / val / test table statistics for each timestamp
         and the whole table, including number of unique source entities,
         number of unique destination entities, number of destination
@@ -171,7 +167,7 @@ class LinkTask(BaseTask):
         ] = ratio_train_test_entity_overlap
         return res
 
-    def _get_stats(self, df: pd.DataFrame) -> list[int]:
+    def _get_stats(self, df: pd.DataFrame) -> List[int]:
         num_unique_src_entities = df[self.src_entity_col].nunique()
         num_unique_dst_entities = len(
             set(value for row in df[self.dst_entity_col] for value in row)
