@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def db_hashes(
-    in_dir="~/.cache/relbench_upload/",
+    in_dir="~/.cache/relbench/",
     out_file="/lfs/local/0/ranjanr/relbench/relbench/datasets/hashes.json",
 ):
     hashes = {}
@@ -19,14 +19,14 @@ def db_hashes(
 
 
 def task_hashes(
-    in_dir="~/.cache/relbench_upload/",
+    in_dir="~/.cache/relbench/",
     out_file="/lfs/local/0/ranjanr/relbench/relbench/tasks/hashes.json",
 ):
     hashes = {}
     in_dir = Path(in_dir).expanduser()
     dataset_dirs = list(in_dir.iterdir())
     for dataset_dir in dataset_dirs:
-        for task_zip in Path(f"{dataset_dir}/tasks").iterdir():
+        for task_zip in Path(f"{dataset_dir}/tasks").glob("*.zip"):
             with open(task_zip, "rb") as f:
                 sha256 = hashlib.sha256(f.read()).hexdigest()
             hashes[f"{dataset_dir.name}/tasks/{task_zip.name}"] = sha256
