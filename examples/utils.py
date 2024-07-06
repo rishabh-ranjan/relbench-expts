@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def db_hashes(
-    in_dir="~/.cache/relbench/",
+    in_dir="~/.cache/relbench_upload/",
     out_file="/lfs/local/0/ranjanr/relbench/relbench/datasets/hashes.json",
 ):
     hashes = {}
@@ -19,7 +19,7 @@ def db_hashes(
 
 
 def task_hashes(
-    in_dir="~/.cache/relbench/",
+    in_dir="~/.cache/relbench_upload/",
     out_file="/lfs/local/0/ranjanr/relbench/relbench/tasks/hashes.json",
 ):
     hashes = {}
