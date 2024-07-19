@@ -6,9 +6,8 @@ from relbench.metrics import accuracy, average_precision, f1, mae, r2, rmse, roc
 
 
 class DriverPositionTask(NodeTask):
-    r"""Predict the average finishing position of each driver
-    all races in the next 2 months.
-    """
+    r"""Predict the average finishing position of each driver all races in the next 2
+    months."""
 
     task_type = TaskType.REGRESSION
     entity_col = "driverId"
@@ -17,6 +16,7 @@ class DriverPositionTask(NodeTask):
     target_col = "position"
     timedelta = pd.Timedelta(days=60)
     metrics = [r2, mae, rmse]
+    num_eval_timestamps = 40
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for rel-f1-position."""
@@ -73,6 +73,7 @@ class DriverDNFTask(NodeTask):
     target_col = "did_not_finish"
     timedelta = pd.Timedelta(days=30)
     metrics = [average_precision, accuracy, f1, roc_auc]
+    num_eval_timestamps = 40
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for rel-f1-dnf."""
@@ -123,9 +124,8 @@ class DriverDNFTask(NodeTask):
 
 
 class DriverTop3Task(NodeTask):
-    r"""Predict if each driver will qualify in the top-3 for
-    a race within the next 1 month.
-    """
+    r"""Predict if each driver will qualify in the top-3 for a race within the next 1
+    month."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "driverId"
@@ -134,6 +134,7 @@ class DriverTop3Task(NodeTask):
     target_col = "qualifying"
     timedelta = pd.Timedelta(days=30)
     metrics = [average_precision, accuracy, f1, roc_auc]
+    num_eval_timestamps = 40
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         r"""Create Task object for rel-f1-qualifying."""

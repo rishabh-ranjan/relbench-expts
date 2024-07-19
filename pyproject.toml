@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "relbench"
-version = "0.2.0"
+version = "1.0.0-rc1"
 description = "RelBench: Relational Deep Learning Benchmark"
 authors = [{name = "RelBench Team", email = "relbench@cs.stanford.edu"}]
 readme = "README.md"
@@ -22,19 +22,18 @@ dependencies=[
 	"duckdb",
 	"scikit-learn",
 	"typing-extensions",
-	"tqdm",
 ]
 
 [project.optional-dependencies]
 full=[
-	"torch",
-	# We rely on https://github.com/pyg-team/pytorch-frame/pull/395 for rel-amazon.
-	# TODO: use the PyPI version when it's released.
-	"pytorch_frame[full] @ git+https://github.com/pyg-team/pytorch-frame",
+	"pytorch_frame>=0.2.3",
 	"torch_geometric",
 ]
 example=[
 	"sentence-transformers",
+	"pytorch_frame[full]",
+	"torch_geometric",
+	"tqdm",
 ]
 test=[
 	"pytest",
