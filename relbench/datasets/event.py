@@ -58,15 +58,6 @@ class EventDataset(Dataset):
             users_df["joinedAt"], errors="coerce", format="mixed"
         ).dt.tz_localize(None)
 
-        friends_df = pd.read_csv(
-            users, dtype={"user_id": int}, parse_dates=["joinedAt"]
-        )
-        friends_df["birthyear"] = pd.to_numeric(
-            friends_df["birthyear"], errors="coerce"
-        )
-        friends_df["joinedAt"] = pd.to_datetime(
-            friends_df["joinedAt"], errors="coerce", format="mixed"
-        ).dt.tz_localize(None)
         events_df = pd.read_csv(events)
         events_df["start_time"] = pd.to_datetime(
             events_df["start_time"], errors="coerce", format="mixed"
@@ -91,6 +82,13 @@ class EventDataset(Dataset):
                 user=lambda df: df["user"].astype(int),
                 friend=lambda df: df["friend"].astype(int),
             )
+
+            # Some friends are not present in the user table, so we drop those friends
+            # in the user_friends table
+            user_friends_flattened_df = user_friends_flattened_df.merge(
+                users_df, how="inner", left_on="friend", right_on="user_id"
+            )
+            user_friends_flattened_df = user_friends_flattened_df[["user", "friend"]]
             user_friends_flattened_df.to_csv(
                 os.path.join(path, "user_friends_flattened.csv")
             )
@@ -153,12 +151,6 @@ class EventDataset(Dataset):
                     pkey_col="user_id",
                     time_col="joinedAt",
                 ),
-                "friends": Table(
-                    df=friends_df,
-                    fkey_col_to_pkey_table={},
-                    pkey_col="user_id",
-                    time_col="joinedAt",
-                ),
                 "events": Table(
                     df=events_df,
                     fkey_col_to_pkey_table={"user_id": "friends"},
@@ -185,7 +177,7 @@ class EventDataset(Dataset):
                     df=user_friends_flattened_df,
                     fkey_col_to_pkey_table={
                         "user": "users",
-                        "friend": "friends",
+                        "friend": "users",
                     },
                 ),
             }
