@@ -153,7 +153,7 @@ class EventDataset(Dataset):
                 ),
                 "events": Table(
                     df=events_df,
-                    fkey_col_to_pkey_table={"user_id": "friends"},
+                    fkey_col_to_pkey_table={"user_id": "users"},
                     pkey_col="event_id",
                     time_col="start_time",
                 ),
