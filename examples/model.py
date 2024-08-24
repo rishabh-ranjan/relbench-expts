@@ -49,6 +49,8 @@ class Model(torch.nn.Module):
 
         self.node_type_emb = nn.Embedding(len(data.node_types), d_model)
         self.node_types = data.node_types
+        self.edge_type_emb = nn.Embedding(len(data.edge_types), d_model // num_heads)
+        self.edge_types = data.edge_types
 
         self.transformer = TransformerCore(
             num_t_layers,
@@ -93,8 +95,18 @@ class Model(torch.nn.Module):
 
         x = torch.cat(x_list, dim=-2)
 
+        e = torch.zeros(
+            x.size(0), x.size(0), self.edge_type_emb.weight.size(-1), device=x.device
+        )
+        for i, emb in enumerate(self.edge_type_emb.weight):
+            edge_type = self.edge_types[i]
+            edge_index = batch.edge_index_dict[edge_type]
+            u = node_type_to_offset[edge_type[0]] + edge_index[0]
+            v = node_type_to_offset[edge_type[2]] + edge_index[1]
+            e[u, v] = emb
+
         x = rearrange(x, "i d -> 1 i d")
-        x = self.transformer(x, e=None)
+        x = self.transformer(x, e)
         x = rearrange(x, "1 i d -> i d")
 
         offset = node_type_to_offset[entity_table]

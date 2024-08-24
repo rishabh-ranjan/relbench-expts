@@ -24,10 +24,9 @@ class Attention(nn.Module):
         xv = rearrange(xv, "b i (h d) -> b h i d", h=self.num_heads)
 
         sqrt_d = xq.size(-1) ** 0.5
-        a = einsum(xq, xk, "b h i d, b h j d -> b h i j")
+        a = einsum(xq, e, xk, "b h i d, i j d, b h j d -> b h i j")
         a = F.softmax(a / sqrt_d, dim=-1)
         x = einsum(a, xv, "b h i j, b h j d -> b h i d")
-        # TODO: add e
 
         x = rearrange(x, "b h i d -> b i (h d)")
         x = self.wo(x)
@@ -76,29 +75,4 @@ class TransformerCore(nn.Module):
         for layer in self.layers:
             x = layer(x, e)
         x = self.norm_out(x)
-        return x
-
-
-class RelTransformer(nn.Module):
-    def __init__(
-        self,
-        num_layers,
-        d_model,
-        num_heads,
-        d_ff,
-        node_types,
-    ):
-        super().__init__()
-
-        self.node_type_emb = nn.Embedding(len(node_types), d_model)
-        self.transformer = TransformerCore(num_layers, d_model, num_heads, d_ff)
-
-    def forward(self, x_dict, edge_index_dict):
-        for node_type in x_dict.keys():
-            x_dict[node_type] += self.node_type_emb(node_type)
-
-        x = rearrange(x_dict, "n i d -> n i d")
-
-        x = self.transformer(x, e=None)
-
         return x
