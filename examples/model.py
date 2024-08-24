@@ -1,17 +1,109 @@
 from typing import Any, Dict, List
 
+from einops import rearrange
 import torch
 from torch import Tensor
+from torch import nn
 from torch.nn import Embedding, ModuleDict
 from torch_frame.data.stats import StatType
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import MLP
 from torch_geometric.typing import NodeType
 
+from transformer import TransformerCore
 from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE, HeteroTemporalEncoder
 
 
 class Model(torch.nn.Module):
+
+    def __init__(
+        self,
+        data: HeteroData,
+        col_stats_dict: Dict[str, Dict[str, Dict[StatType, Any]]],
+        num_layers: int,
+        channels: int,
+        out_channels: int,
+        aggr: str,
+        norm: str,
+        num_t_layers: int = 2,
+        d_model: int = 128,
+        num_heads: int = 4,
+        d_ff: int = 512,
+    ):
+        super().__init__()
+
+        self.encoder = HeteroEncoder(
+            channels=channels,
+            node_to_col_names_dict={
+                node_type: data[node_type].tf.col_names_dict
+                for node_type in data.node_types
+            },
+            node_to_col_stats=col_stats_dict,
+        )
+        self.temporal_encoder = HeteroTemporalEncoder(
+            node_types=[
+                node_type for node_type in data.node_types if "time" in data[node_type]
+            ],
+            channels=channels,
+        )
+
+        self.node_type_emb = nn.Embedding(len(data.node_types), d_model)
+        self.node_types = data.node_types
+
+        self.transformer = TransformerCore(
+            num_t_layers,
+            d_model,
+            num_heads,
+            d_ff,
+        )
+
+        self.head = MLP(
+            channels,
+            out_channels=out_channels,
+            norm=norm,
+            num_layers=1,
+        )
+
+    def forward(
+        self,
+        batch: HeteroData,
+        entity_table: NodeType,
+    ) -> Tensor:
+        seed_time = batch[entity_table].seed_time
+        x_dict = self.encoder(batch.tf_dict)
+
+        rel_time_dict = self.temporal_encoder(
+            seed_time, batch.time_dict, batch.batch_dict
+        )
+
+        for node_type, rel_time in rel_time_dict.items():
+            x_dict[node_type] = x_dict[node_type] + rel_time
+
+        for i, emb in enumerate(self.node_type_emb.weight):
+            node_type = self.node_types[i]
+            x_dict[node_type] = x_dict[node_type] + emb
+
+        node_type_to_offset = {}
+        x_list = []
+        node_count = 0
+        for node_type, x in x_dict.items():
+            node_type_to_offset[node_type] = node_count
+            x_list.append(x)
+            node_count += x.size(0)
+
+        x = torch.cat(x_list, dim=-2)
+
+        x = rearrange(x, "i d -> 1 i d")
+        x = self.transformer(x, e=None)
+        x = rearrange(x, "1 i d -> i d")
+
+        offset = node_type_to_offset[entity_table]
+        x = x[offset : offset + seed_time.size(0)]
+
+        return self.head(x)
+
+
+class OldModel(torch.nn.Module):
 
     def __init__(
         self,

@@ -16,6 +16,9 @@ from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
+import wandb
+
+wandb.require("core")
 
 from relbench.base import Dataset, EntityTask, TaskType
 from relbench.datasets import get_dataset
@@ -199,13 +202,25 @@ model = Model(
     norm="batch_norm",
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
 state_dict = None
 best_val_metric = -math.inf if higher_is_better else math.inf
+
+wandb.init()
+
 for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(loader_dict["val"])
     val_metrics = task.evaluate(val_pred, task.get_table("val"))
     print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}")
+
+    wandb.log(
+        {
+            "train_loss": train_loss,
+            "val_auroc": val_metrics["roc_auc"],
+            "epoch": epoch,
+        }
+    )
 
     if (higher_is_better and val_metrics[tune_metric] >= best_val_metric) or (
         not higher_is_better and val_metrics[tune_metric] <= best_val_metric
@@ -227,3 +242,5 @@ if args.roach_project:
     roach.store["val"] = val_metrics
     roach.store["test"] = test_metrics
     roach.finish()
+
+wandb.finish()
